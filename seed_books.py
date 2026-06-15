@@ -12,7 +12,7 @@ from book.models import Book
 def seed():
     # 1. Create a superuser / test user if it doesn't exist
     username = 'admin'
-    password = 'password123'
+    password = 'admin'
     email = 'admin@example.com'
     
     user, created = User.objects.get_or_create(username=username, defaults={
@@ -20,12 +20,12 @@ def seed():
         'is_staff': True,
         'is_superuser': True
     })
+    user.set_password(password)
+    user.save()
     if created:
-        user.set_password(password)
-        user.save()
         print(f"Created admin user: username={username}, password={password}")
     else:
-        print(f"Admin user already exists: username={username}")
+        print(f"Updated admin user: username={username}, password={password}")
         
     # 2. Clear existing books to make it clean
     Book.objects.all().delete()
