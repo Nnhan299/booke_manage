@@ -2,10 +2,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Book
 from .serializers import BookSerializer
+from .pagination import CustomPageNumberPagination
 from django.shortcuts import get_object_or_404
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 class BookListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -47,29 +48,14 @@ class BookListCreateAPIView(APIView):
                 pass
 
         # 2. Custom Pagination
-        page_size_param = request.query_params.get('page_size')
-        page_size = 20
-        if page_size_param == '100':
-            page_size = 100
+        paginator = CustomPageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        if page is not None:
+            serializer = BookSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
 
-        page_number = request.query_params.get('page', 1)
-        paginator = Paginator(queryset, page_size)
-
-        try:
-            page_obj = paginator.page(page_number)
-        except PageNotAnInteger:
-            page_obj = paginator.page(1)
-        except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)
-
-        serializer = BookSerializer(page_obj.object_list, many=True)
-        
-        return Response({
-            'count': paginator.count,
-            'next': self.get_next_link(request, page_obj),
-            'previous': self.get_previous_link(request, page_obj),
-            'results': serializer.data
-        }, status=status.HTTP_200_OK)
+        serializer = BookSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = BookSerializer(data=request.data)
@@ -77,22 +63,6 @@ class BookListCreateAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def get_next_link(self, request, page_obj):
-        if not page_obj.has_next():
-            return None
-        url = request.build_absolute_uri(request.path)
-        params = request.GET.copy()
-        params['page'] = page_obj.next_page_number()
-        return f"{url}?{params.urlencode()}"
-
-    def get_previous_link(self, request, page_obj):
-        if not page_obj.has_previous():
-            return None
-        url = request.build_absolute_uri(request.path)
-        params = request.GET.copy()
-        params['page'] = page_obj.previous_page_number()
-        return f"{url}?{params.urlencode()}"
 
 
 class BookDetailAPIView(APIView):
@@ -126,3 +96,18 @@ class BookDetailAPIView(APIView):
         book = self.get_object(pk)
         book.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class LogoutAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh_token")
+            if not refresh_token:
+                return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
