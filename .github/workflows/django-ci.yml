@@ -28,9 +28,13 @@ jobs:
         pip install -r requirements.txt
         
     - name: Run Migrations
+      env:
+        DB_ENGINE: django.db.backends.sqlite3
       run: |
         python manage.py migrate
         
     - name: Run Tests
+      env:
+        DB_ENGINE: django.db.backends.sqlite3
       run: |
         python manage.py test
