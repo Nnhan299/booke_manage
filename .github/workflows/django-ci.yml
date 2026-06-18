@@ -33,11 +33,13 @@ jobs:
     - name: Run Migrations
       env:
         DB_ENGINE: django.db.backends.sqlite3
+        DB_NAME: db.sqlite3
       run: |
         python manage.py migrate
         
     - name: Run Tests
       env:
         DB_ENGINE: django.db.backends.sqlite3
+        DB_NAME: db.sqlite3
       run: |
         python manage.py test
