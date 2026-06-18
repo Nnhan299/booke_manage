@@ -8,18 +8,18 @@ from rest_framework_simplejwt.tokens import RefreshToken
 class BookAPITests(APITestCase):
 
     def setUp(self):
-        # Create a user
+        # Tạo user
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         
-        # Get tokens for the user
+        # Lấy token cho user
         refresh = RefreshToken.for_user(self.user)
         self.access_token = str(refresh.access_token)
         self.refresh_token = str(refresh)
         
-        # Set authorization header
+        # Cài đặt header xác thực
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
         
-        # Create initial book data
+        # Tạo dữ liệu sách ban đầu
         self.book = Book.objects.create(
             title="Test Book",
             author="Test Author",
@@ -70,7 +70,7 @@ class BookAPITests(APITestCase):
         self.assertEqual(Book.objects.count(), 0)
 
     def test_unauthorized_access(self):
-        self.client.credentials() # Remove auth
+        self.client.credentials() # Xóa xác thực
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -79,7 +79,7 @@ class BookAPITests(APITestCase):
         response = self.client.post(self.logout_url, data)
         self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
         
-        # Test that refresh token is blacklisted by trying to refresh with it
+        # Kiểm tra xem refresh token đã bị block chưa bằng cách thử dùng nó để lấy token mới
         refresh_url = reverse('token_refresh')
         response = self.client.post(refresh_url, {"refresh": self.refresh_token})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

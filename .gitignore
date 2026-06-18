@@ -50,3 +50,8 @@ htmlcov/
 # Env
 .env
 env.local
+
+# Ignore reports and screenshots
+report_chuong2.md
+screenshot/
+

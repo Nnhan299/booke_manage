@@ -12,7 +12,7 @@ class BookListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # 1. Custom Filtering
+        # 1. Lọc dữ liệu tùy chỉnh
         queryset = Book.objects.all().order_by('id')
         
         title = request.query_params.get('title')
@@ -47,7 +47,7 @@ class BookListCreateAPIView(APIView):
             except ValueError:
                 pass
 
-        # 2. Custom Pagination
+        # 2. Phân trang tùy chỉnh
         paginator = CustomPageNumberPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
         if page is not None:
